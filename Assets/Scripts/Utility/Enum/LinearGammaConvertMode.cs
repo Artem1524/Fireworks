@@ -4,5 +4,6 @@ using System;
 public enum LinearGammaConvertMode : byte
 {
     ToLinear = 1,
-    ToGamma = 2
+    ToGamma = 2,
+	CutAlphaMode = 3
 }

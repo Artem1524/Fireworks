@@ -6,6 +6,7 @@ using UnityEngine;
 public class LinearGammaTextureConverter : MonoBehaviour
 { // ПЕРЕД ИСПОЛЬЗОВАНИЕМ ТЕКСТУРЫ НУЖНО ПЕРЕЙТИ В НАСТРОЙКИ ТЕКСТУРЫ И ПОСТАВИТЬ ГАЛОЧКУ "Advanced -> Read/Write" !!!
     private const string SAVED_IMAGE_FILE_EXTENSION = ".png";
+	private const string ALPHA_FILENAME_SUFFIX = "_alpha";
     private const string GAMMA_FILENAME_SUFFIX = "_gamma";
     private const string LINEAR_FILENAME_SUFFIX = "_linear";
     private const string FILE_EXTENSIONS_PATTERN = @"\.(?i)(bmp|gif|tif|tiff|tga|png|jpg|jpeg)$"; // Поиск расширения в имени файла ( (i?) - игнорируем регистр, (bmp|gif) - список слов для поиска bmp или gif, $ - символ завершения строки)
@@ -73,11 +74,27 @@ public class LinearGammaTextureConverter : MonoBehaviour
                 LogMessage("Конвертируем в линейное цветовое пространство...");
                 return ConvertColorDataToLinear(colorData);
             case LinearGammaConvertMode.ToGamma:
-            default:
                 LogMessage("Конвертируем в гамма (sRGB) цветовое пространство...");
                 return ConvertColorDataToGamma(colorData);
+			case LinearGammaConvertMode.CutAlphaMode:
+			default:
+				LogMessage("Конвертируем alpha channel...");
+				return CutAlphaColorData(colorData);
         }
     }
+	
+	private Color[] CutAlphaColorData(in Color[] colorData)
+	{
+		int pixelCount = colorData.Length;
+		Color[] newData = new Color[pixelCount];
+		
+		for (int i = 0; i < pixelCount; i++)
+		{
+			newData[i] = CutAlphaFromColor(colorData[i]);
+		}
+		
+		return newData;
+	}
 
     private Color[] ConvertColorDataToLinear(in Color[] colorData)
     {
@@ -104,6 +121,22 @@ public class LinearGammaTextureConverter : MonoBehaviour
 
         return newData;
     }
+	
+	private Color CutAlphaFromColor(Color color)
+	{
+		Color newColor = new Color();
+		
+		newColor.r = color.r;
+		newColor.g = color.g;
+		newColor.b = color.b;
+		
+		if (color.a <= 0.93)
+			newColor.a = 0;
+		else
+			newColor.a = 1;
+		
+		return newColor;
+	}
 
     private Color ConvertColorToLinear(Color color)
     {
@@ -144,8 +177,10 @@ public class LinearGammaTextureConverter : MonoBehaviour
             case LinearGammaConvertMode.ToLinear:
                 return fileName + LINEAR_FILENAME_SUFFIX;
             case LinearGammaConvertMode.ToGamma:
-            default:
                 return fileName + GAMMA_FILENAME_SUFFIX;
+			case LinearGammaConvertMode.CutAlphaMode:
+			default:
+				return fileName + ALPHA_FILENAME_SUFFIX;
         }
     }
 
